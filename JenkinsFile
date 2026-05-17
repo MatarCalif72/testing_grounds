@@ -44,22 +44,14 @@ pipeline {
     post {
         success {
             echo "Deployment successful! :D"
-            node {
-                bat "kubectl get pods -l app=inventory-frontend-app"
-                bat "kubectl get pods -l app=inventory-backend"
-            }
+            bat "kubectl get pods -l app=inventory-frontend-app"
+            bat "kubectl get pods -l app=inventory-backend"
         }
         failure {
             echo "Deployment failed. D:<"
-            node {
-                bat "kubectl get pods -l app=inventory-frontend-app"
-                bat "kubectl get pods -l app=inventory-backend"
-            }
+            bat "kubectl get pods -l app=inventory-frontend-app"
+            bat "kubectl get pods -l app=inventory-backend"
         }
-        always {
-            mail to: 'mail@example.com',
-                 subject: "Deployment ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-                 body: "The deployment of ${env.JOB_NAME} #${env.BUILD_NUMBER} has ${currentBuild.currentResult}. Please check the Jenkins console for details."
-        }
+  
     }
 }
