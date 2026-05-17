@@ -1,67 +1,61 @@
-pipeline    {
+pipeline {
     agent any
     parameters {
         string(name: "DIR_PATH", description: "enter project directory path")
     }
 
-      environment {
+    environment {
         FRONTEND_IMAGE = "inventory-frontend-app:v${env.BUILD_NUMBER}"
         BACKEND_IMAGE = "inventory-project-backend:v${env.BUILD_NUMBER}"
     }
-    
+
     stages {
         stage('Build images') {
             steps {
-                   dir("${params.DIR_PATH}") {
+                dir("${params.DIR_PATH}") {
                     echo "Building Frontend..."
                     bat "docker build -t ${FRONTEND_IMAGE} ./frontend"
                     echo "Building Backend..."
                     bat "docker build -t ${BACKEND_IMAGE} ./backend"
+                }
             }
         }
-        stage('load to minikube') {
+        stage('Load to minikube') {
             steps {
                 echo 'Loading frontend image'
-                                bat "minikube image load ${FRONTEND_IMAGE}"
-                echo "loading backend image"
+                bat "minikube image load ${FRONTEND_IMAGE}"
+                echo "Loading backend image"
                 bat "minikube image load ${BACKEND_IMAGE}"
             }
         }
         stage('Deploy to kubernetes') {
             steps {
-                echo 'update frontend deplyment'
+                echo 'Updating frontend deployment'
                 bat "kubectl set image deployment/inventory-frontend-app frontend-app=${FRONTEND_IMAGE}"
                 echo "Updating Backend Deployment..."
                 bat "kubectl set image deployment/inventory-backend java-app=${BACKEND_IMAGE}"
                 echo "Waiting for rollout..."
-                 bat "kubectl rollout status deployment/inventory-frontend-app"
+                bat "kubectl rollout status deployment/inventory-frontend-app"
                 bat "kubectl rollout status deployment/inventory-backend"
-                                
-
             }
         }
+    }
 
-        post{
-            success {
-                echo "Deployment successful! :D "
-                echo "${FRONTEND_IMAGE} status:"
-                   bat "kubectl get pods -l app=inventory-frontend-app"
-                   echo "${BACKEND_IMAGE} status:"
-                   bat "kubectl get pods -l app=inventory-backend"
-            }
-            failure {
-                echo "Deployment failed. D:< )"
-                  echo "${FRONTEND_IMAGE} status:"
-                   bat "kubectl get pods -l app=inventory-frontend-app"
-                   echo "${BACKEND_IMAGE} status:"
-                   bat "kubectl get pods -l app=inventory-backend"
-            }
-
-            always {
-               mail to: 'mail@example.com',
-                subject: "Deployment ${FRONTEND_IMAGE} and ${BACKEND_IMAGE}",
-                body: "The deployment of ${env.JOB_NAME} #${env.BUILD_NUMBER} has ${currentBuild.currentResult}. Please check the Jenkins console for details."
-            }
+    post {
+        success {
+            echo "Deployment successful! :D"
+            bat "kubectl get pods -l app=inventory-frontend-app"
+            bat "kubectl get pods -l app=inventory-backend"
+        }
+        failure {
+            echo "Deployment failed. D:<"
+            bat "kubectl get pods -l app=inventory-frontend-app"
+            bat "kubectl get pods -l app=inventory-backend"
+        }
+        always {
+            mail to: 'mail@example.com',
+                 subject: "Deployment ${FRONTEND_IMAGE} and ${BACKEND_IMAGE}",
+                 body: "The deployment of ${env.JOB_NAME} #${env.BUILD_NUMBER} has ${currentBuild.currentResult}. Please check the Jenkins console for details."
         }
     }
 }
