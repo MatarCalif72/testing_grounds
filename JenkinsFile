@@ -1,8 +1,6 @@
 pipeline {
     agent any
-    parameters {
-        string(name: "DIR_PATH", description: "enter project directory path")
-    }
+
 
     environment {
         FRONTEND_IMAGE = "inventory-frontend-app:v${env.BUILD_NUMBER}"
@@ -12,14 +10,13 @@ pipeline {
     stages {
         stage('Build images') {
             steps {
-                dir("${params.DIR_PATH}") {
                     echo "Building Frontend..."
                     bat "docker build -t ${FRONTEND_IMAGE} ./frontend"
                     echo "Building Backend..."
                     bat "docker build -t ${BACKEND_IMAGE} ./backend"
                 }
             }
-        }
+        
         stage('Load to minikube') {
             steps {
                 echo 'Loading frontend image'
@@ -40,6 +37,8 @@ pipeline {
             }
         }
     }
+
+//change
 
     post {
         success {
